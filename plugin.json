@@ -1,0 +1,19 @@
+{
+  "$schema": "https://danklinux.com/schemas/plugin.json",
+  "id": "sshPlus",
+  "name": "SSH Plus",
+  "description": "SSH to any host and remember the ones that connect successfully",
+  "version": "0.1.0",
+  "author": "Bryan Bai",
+  "icon": "terminal",
+  "type": "launcher",
+  "capabilities": ["launcher", "command-execution"],
+  "component": "./SshPlus.qml",
+  "settings": "./SshPlusSettings.qml",
+  "trigger": "ssh:",
+  "viewMode": "list",
+  "viewModeEnforced": true,
+  "requires_dms": ">=1.5.0",
+  "permissions": ["process", "settings_read", "settings_write"],
+  "dependencies": ["ssh", "ghostty"]
+}
