@@ -49,12 +49,12 @@ PluginSettings {
     SelectionSetting {
         settingKey: "sort_mode"
         label: "Sort Recorded Hosts"
-        description: "Order hosts by most recent connection or by connection frequency"
+        description: "Order hosts by connection frequency or by most recent connection"
         options: [
-            { label: "Most recent", value: "recency" },
-            { label: "Most frequent", value: "frequency" }
+            { label: "Most frequent", value: "frequency" },
+            { label: "Most recent", value: "recency" }
         ]
-        defaultValue: "recency"
+        defaultValue: "frequency"
     }
 
     ToggleSetting {

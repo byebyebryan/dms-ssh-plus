@@ -102,8 +102,8 @@ cgroup — no better option without systemd).
 
 `sort_mode` selects between:
 
-- `recency` — `lastConnected` descending (default).
-- `frequency` — `count` descending, ties broken by `lastConnected`.
+- `frequency` — `count` descending, ties broken by `lastConnected` (default).
+- `recency` — `lastConnected` descending.
 
 Hosts render with the count as a badge and a comment like `2h ago · 5 connects`
 (order swaps under frequency sorting). The result list caps at 20 visible rows.

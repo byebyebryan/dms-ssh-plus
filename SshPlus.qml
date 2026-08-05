@@ -17,7 +17,7 @@ Item {
     property string trigger: defaultTrigger
     property string terminal: defaultTerminal
     property string sshCommand: defaultSshCommand
-    property string sortMode: "recency"
+    property string sortMode: "frequency"
     property bool probeEnabled: true
     property int connectTimeout: defaultConnectTimeout
     property int maxHosts: defaultMaxHosts
@@ -42,7 +42,7 @@ Item {
         trigger = pluginService.loadPluginData(pluginName, "trigger", defaultTrigger);
         terminal = pluginService.loadPluginData(pluginName, "terminal", defaultTerminal);
         sshCommand = pluginService.loadPluginData(pluginName, "ssh_command", defaultSshCommand);
-        sortMode = pluginService.loadPluginData(pluginName, "sort_mode", "recency");
+        sortMode = pluginService.loadPluginData(pluginName, "sort_mode", "frequency");
         probeEnabled = _asBool(
             pluginService.loadPluginData(pluginName, "probe_enabled", true),
             true
