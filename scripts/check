@@ -1,0 +1,138 @@
+#!/usr/bin/env sh
+set -eu
+
+# Keep this entry point runnable from any checkout location while making every
+# external command explicit. The CI image currently provides these tools, and
+# the preflight makes a missing dependency fail with an actionable message.
+required_tools='dirname git python3 sh'
+for tool in $required_tools; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        printf 'Missing required check tool: %s\n' "$tool" >&2
+        exit 1
+    fi
+done
+
+repo_dir=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$repo_dir"
+
+printf '%s\n' 'Checking plugin manifest...'
+python3 - <<'PY'
+import json
+import pathlib
+import re
+import sys
+
+root = pathlib.Path(".")
+manifest_path = root / "plugin.json"
+
+try:
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    print(f"invalid plugin.json: {exc}", file=sys.stderr)
+    sys.exit(1)
+
+if not isinstance(manifest, dict):
+    print("plugin.json must contain an object", file=sys.stderr)
+    sys.exit(1)
+
+required = [
+    "id",
+    "name",
+    "description",
+    "version",
+    "author",
+    "type",
+    "capabilities",
+    "component",
+    "settings",
+    "trigger",
+    "requires_dms",
+    "permissions",
+    "dependencies",
+]
+missing = [key for key in required if key not in manifest]
+if missing:
+    print(f"missing required manifest fields: {', '.join(missing)}", file=sys.stderr)
+    sys.exit(1)
+
+if not isinstance(manifest["id"], str) or not re.fullmatch(
+    r"[A-Za-z][A-Za-z0-9]*", manifest["id"]
+):
+    print("manifest id must be camelCase without spaces", file=sys.stderr)
+    sys.exit(1)
+
+if not isinstance(manifest["version"], str) or not re.fullmatch(
+    r"\d+\.\d+\.\d+(-[A-Za-z0-9.-]+)?(\+[A-Za-z0-9.-]+)?",
+    manifest["version"],
+):
+    print("manifest version must be semantic version format", file=sys.stderr)
+    sys.exit(1)
+
+if manifest["type"] != "launcher":
+    print("manifest type must be launcher", file=sys.stderr)
+    sys.exit(1)
+
+if not isinstance(manifest["trigger"], str) or not manifest["trigger"].strip():
+    print("manifest trigger must be a non-empty string", file=sys.stderr)
+    sys.exit(1)
+
+if not isinstance(manifest["requires_dms"], str) or not re.fullmatch(
+    r">=\d+\.\d+\.\d+", manifest["requires_dms"]
+):
+    print("manifest requires_dms must be a >=major.minor.patch range", file=sys.stderr)
+    sys.exit(1)
+
+for key in ("capabilities", "permissions", "dependencies"):
+    value = manifest[key]
+    if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
+        print(f"manifest {key} must be a list of non-empty strings", file=sys.stderr)
+        sys.exit(1)
+
+if "launcher" not in manifest["capabilities"]:
+    print("manifest capabilities must include launcher", file=sys.stderr)
+    sys.exit(1)
+
+expected_permissions = {"process", "settings_read", "settings_write"}
+missing_permissions = expected_permissions.difference(manifest["permissions"])
+if missing_permissions:
+    missing = ", ".join(sorted(missing_permissions))
+    print(f"manifest permissions missing expected entries: {missing}", file=sys.stderr)
+    sys.exit(1)
+
+if manifest["dependencies"] != ["ssh"]:
+    print("manifest dependencies must declare only the hard ssh requirement", file=sys.stderr)
+    sys.exit(1)
+
+for key in ("component", "settings"):
+    value = manifest[key]
+    if not isinstance(value, str) or not value.startswith("./"):
+        print(f"manifest {key} must be a relative path", file=sys.stderr)
+        sys.exit(1)
+
+    relative = pathlib.PurePosixPath(value[2:])
+    if not relative.name or relative.is_absolute() or ".." in relative.parts:
+        print(f"manifest {key} must stay inside the repository: {value}", file=sys.stderr)
+        sys.exit(1)
+    if relative.suffix != ".qml":
+        print(f"manifest {key} must point to a QML file: {value}", file=sys.stderr)
+        sys.exit(1)
+    path = root.joinpath(*relative.parts)
+    if not path.is_file():
+        print(f"manifest {key} path does not exist: {value}", file=sys.stderr)
+        sys.exit(1)
+PY
+
+printf '%s\n' 'Checking shell syntax...'
+for shell_file in install.sh scripts/check; do
+    if [ ! -f "$shell_file" ]; then
+        printf 'Missing shell file: %s\n' "$shell_file" >&2
+        exit 1
+    fi
+    sh -n "$shell_file"
+done
+
+printf '%s\n' 'Checking diff whitespace...'
+git diff --check
+git diff --cached --check
+
+printf '%s\n' 'Repository checks passed.'

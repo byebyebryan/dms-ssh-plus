@@ -1,6 +1,29 @@
 # Design: SSH Plus
 
-Status: initial scaffold, not yet validated live.
+Status: implemented and observed in live use under DMS 1.5.3. Repository
+validation is deterministic; QML semantic and live lifecycle contracts remain
+separate validation work.
+
+## Validation status
+
+On 2026-08-18 the deployed plugin was observed loaded by DMS 1.5.3. The
+deployed pinned/copy directory matched this checkout, the plugin state existed
+with one recorded host, the current boot loaded it cleanly, and journal
+evidence showed actual launches through systemd user scopes. These observations
+were made from the manually pinned/copy deployment described in the README,
+not from the development symlink.
+
+Historical component-load errors from 2026-08-04 predate commit `48c8960`,
+which changed the plugin root from `QtObject` to `Item`; they are not current
+failure evidence.
+
+This is evidence of startup and ordinary use, not a fresh test of every
+contract. In particular, a deliberately triggered DMS restart, every probe
+failure class, and interactive password authentication were not tested in
+this validation pass. `scripts/check` validates manifest structure and paths,
+shell syntax, and diff whitespace without requiring a DMS session or network;
+it does not perform QML semantic validation. Run `qmllint` separately when a
+DMS/Quickshell import environment is available.
 
 ## Problem
 
@@ -35,7 +58,7 @@ Recorded hosts are runtime data, so they use the **state API**
 growing history out of the user-editable `plugin_settings.json`, and state
 writes are atomic and debounced by the platform.
 
-Each record: `{ "host": "docker.lan", "lastConnected": 1722743000123, "count": 5 }`
+Each record: `{ "host": "host.example", "lastConnected": 1722743000123, "count": 5 }`
 
 Settings (`plugin_settings.json`) hold only preferences: trigger, terminal,
 ssh command, sort mode, probe toggle, timeouts, history cap, and the systemd
@@ -93,10 +116,13 @@ systemd-run --user --scope --collect --quiet -- <terminal> -e sh -lc "ssh <host>
 
 `--scope` starts the command as a scope unit owned by the systemd user manager
 (`systemd --user`, which DMS already runs under), independent of `dms.service`.
-Restarting or reloading DMS therefore leaves the SSH session running.
+When scope launch is enabled and `systemd-run` is available, restarting or
+reloading DMS therefore leaves the SSH session running.
 `systemd-run` availability is probed once at load; when absent the plugin falls
 back to a plain detached launch (new session, but still in the DMS unit's
-cgroup — no better option without systemd).
+cgroup — no better option without systemd). The DMS-restart survival guarantee
+therefore applies only when the scope launch is enabled and `systemd-run` is
+available.
 
 ### Ordering
 
