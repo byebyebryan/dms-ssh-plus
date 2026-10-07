@@ -1,5 +1,12 @@
 # DMS SSH Plus
 
+> **Retired:** superseded by [`rofi-ssh-plus`](https://github.com/byebyebryan/rofi-ssh-plus).
+> The Rofi project owns the current SSH picker and Host Mesh contract.
+>
+> Retained design rationale is documented in [Rofi SSH Plus's design notes](https://github.com/byebyebryan/rofi-ssh-plus/blob/main/docs/DESIGN.md#retained-lesson-reachability-needs-connection-evidence).
+> This repository is preserved for historical reference. The DMS UI,
+> settings, launch implementation, and validation below describe the retired plugin.
+
 A DankMaterialShell launcher plugin for SSH that remembers the hosts you
 actually connect to. Type `ssh:` in the launcher to connect to any host, and
 the plugin records the ones that connect successfully with their last-used
